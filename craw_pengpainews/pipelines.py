@@ -8,6 +8,7 @@ import codecs
 import json
 import pymysql
 from craw_pengpainews.util.db import con
+from craw_pengpainews.rabbitmq import producer
 # this class for write file
 class JsonWriterPipeline(object):
        '''保存到文件中对应的class
@@ -35,15 +36,6 @@ class insertDbPipeline(object):
         '''
 
         def process_item(self, item, spider):
-            con = pymysql.connect(
-                host='127.0.0.1',
-                port=3306,
-                user='root',
-                passwd='root1234',
-                db='craw_data',
-                charset='utf8',
-                cursorclass=pymysql.cursors.DictCursor
-            )
             # 使用cursor()方法获取操作游标
             cursor = con.cursor(pymysql.cursors.DictCursor)
             row = checkTitleFromDb(item['title'])
@@ -56,4 +48,5 @@ class insertDbPipeline(object):
                 con.commit()
                 cursor.close()
                 con.close()
+                producer.emit(item['title'][0]+item['link'])
                 return item
